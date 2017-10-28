@@ -23,134 +23,155 @@ Revision History:
 
 #include "precomp.h"
 
-BOOLEAN
+bool
+read_file_at(
+    FILE *fp,
+    uint64_t offset,
+    void *buffer,
+    uint32_t buffer_size
+)
+{
+    size_t size = PAGE_SIZE;
+    size_t result = 0;
+    bool status = false;
+
+    if (buffer_size) size = buffer_size;
+
+    if (fseek64(fp, offset, SEEK_SET)) {
+        printf("error: can't change the offset to 0x%" I64_FORMAT "x.\n", offset);
+        goto cleanup;
+    }
+
+    result = fread(buffer, 1, size, fp);
+    if (result != size) {
+        // printf("error: can't read data at 0x%llx. result = 0x%zx\n", offset, result);
+        goto cleanup;
+    }
+
+    status = true;
+
+cleanup:
+    return status;
+}
+
+
+bool
 FileContext::Is64Bits(
 )
 {
-    if (GetPlatform() == PlatformX64) return TRUE;
-    else return FALSE;
+    if (GetPlatform() == PlatformX64) return true;
+    else return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWin10(
 )
 {
-    if ((GetMajorVersion() == 10) && (GetMinorVersion() == 0)) return TRUE;
-    return FALSE;
+    if ((GetMajorVersion() == 10) && (GetMinorVersion() == 0)) return true;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWin81(
 )
 {
-    if ((GetMajorVersion() == 6) && (GetMinorVersion() == 3)) return TRUE;
+    if ((GetMajorVersion() == 6) && (GetMinorVersion() == 3)) return true;
 
-    return FALSE;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWin8(
 )
 {
-    if ((GetMajorVersion() == 6) && (GetMinorVersion() == 2)) return TRUE;
-    return FALSE;
+    if ((GetMajorVersion() == 6) && (GetMinorVersion() == 2)) return true;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWin7()
 {
-    if ((GetMajorVersion() == 6) && (GetMinorVersion() == 1)) return TRUE;
+    if ((GetMajorVersion() == 6) && (GetMinorVersion() == 1)) return true;
 
-    return FALSE;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWinVista(
 )
 {
-    if ((GetMajorVersion() == 6) && (GetMinorVersion() == 0)) return TRUE;
-    return FALSE;
+    if ((GetMajorVersion() == 6) && (GetMinorVersion() == 0)) return true;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWinXP64(
 )
 {
-    if ((GetMajorVersion() == 5) && (GetMinorVersion() == 2) && Is64Bits()) return TRUE;
+    if ((GetMajorVersion() == 5) && (GetMinorVersion() == 2) && Is64Bits()) return true;
 
-    return FALSE;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWinXP(
 )
 {
-    if ((GetMajorVersion() == 5) && (GetMinorVersion() == 1)) return TRUE;
+    if ((GetMajorVersion() == 5) && (GetMinorVersion() == 1)) return true;
 
-    return FALSE;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsVistaAndAbove(
 )
 {
-    if (GetMajorVersion() >= 6) return TRUE;
+    if (GetMajorVersion() >= 6) return true;
 
-    return FALSE;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWin7AndAbove(
 )
 {
     if ((GetMajorVersion() > 6) || ((GetMajorVersion() == 6) && (GetMinorVersion() >= 1)))
     {
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
-BOOLEAN
+bool
 FileContext::IsWin8AndAbove(
 )
 {
     if ((GetMajorVersion() > 6) || ((GetMajorVersion() == 6) && (GetMinorVersion() >= 2)))
     {
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
-PVOID
+void *
 FileContext::GetTempBuffer()
 {
-    if (m_PreAllocatedBuffer == NULL) m_PreAllocatedBuffer = new byte[m_PreAllocatedBufferSize];
+    if (m_PreAllocatedBuffer == NULL) m_PreAllocatedBuffer = new uint8_t[m_PreAllocatedBufferSize];
     RtlZeroMemory(m_PreAllocatedBuffer, m_PreAllocatedBufferSize);
 
     return m_PreAllocatedBuffer;
 }
 
-PVOID
+void *
 FileContext::ReadFile(
-    ULONG64 Offset,
-    ULONG DataBufferSize,
-    PVOID *DataBuffer
+    uint64_t Offset,
+    uint32_t DataBufferSize,
+    uint8_t **DataBuffer
 )
 {
-    OVERLAPPED Overlapped = { 0 };
-    ULONG NbOfBytes;
-
-    BOOL Ret;
-
-    PVOID Buffer = NULL;
-
-    LARGE_INTEGER Addr;
-    Addr.QuadPart = Offset;
-
-    Overlapped.Offset = Addr.LowPart;
-    Overlapped.OffsetHigh = Addr.HighPart;
+    void *Buffer = NULL;
 
     // assert(DataBufferSize <= MAX_COMPRESSED_BLOCK_SIZE);
 
@@ -165,7 +186,7 @@ FileContext::ReadFile(
 
         if (m_ReadedData == NULL)
         {
-            m_ReadedData = new byte[DataBufferSize];
+            m_ReadedData = new uint8_t[DataBufferSize];
             m_ReadedDataSize = DataBufferSize;
         }
         RtlZeroMemory(m_ReadedData, DataBufferSize);
@@ -173,120 +194,82 @@ FileContext::ReadFile(
     }
     else
     {
-        if (*DataBuffer == NULL) *DataBuffer = new byte[DataBufferSize];
+        if (*DataBuffer == NULL) *DataBuffer = new uint8_t[DataBufferSize];
         RtlZeroMemory(*DataBuffer, DataBufferSize);
         Buffer = *DataBuffer;
     }
 
-    NbOfBytes = 0;
-    Ret = ::ReadFile(GetFileHandle(), Buffer, DataBufferSize, &NbOfBytes, &Overlapped);
-
-    // Asynchronous  I/O
-    if (Ret == FALSE)
-    {
-        if (GetLastError() != ERROR_IO_PENDING)
-        {
-            return NULL;
-        }
-        else
-        {
-            Ret = GetOverlappedResult(GetFileHandle(), &Overlapped, &NbOfBytes, TRUE);
-        }
-    }
+    if (!read_file_at(GetFileHandle(), Offset, Buffer, DataBufferSize)) return NULL;
 
     return Buffer;
 }
 
-BOOLEAN
+bool
 FileContext::OpenFile(
-    LPCWSTR FileName,
-    ULONG Type
+    char * FileName,
+    uint32_t Type
 )
 {
-    m_FileHandle = CreateFileW(FileName,
-        GENERIC_READ,
-        FILE_SHARE_READ, // If user already opened file in an editor.
-        NULL,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-        NULL);
-
-    if (GetLastError() == ERROR_SHARING_VIOLATION)
-    {
-        m_FileHandle = CreateFileW(FileName,
-            GENERIC_READ,
-            FILE_SHARE_READ | FILE_SHARE_WRITE, // If user already opened file in an editor.
-            NULL,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-            NULL);
+    m_FileHandle = fopen(FileName, "rb");
+    if (m_FileHandle == NULL) {
+        printf("FileOpen: Could not open file.\n");
+        Close();
+        return false;
     }
 
-    if (m_FileHandle == INVALID_HANDLE_VALUE) return FALSE;
-
-    return TRUE;
+    return true;
 }
 
-BOOLEAN
+bool
 FileContext::CreateOutputFile(
-    LPWSTR FileName
+    char * FileName
 )
 {
-    m_OutFileHandle = ::CreateFileW(FileName,
-        GENERIC_WRITE,
-        0,
-        NULL,
-        CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL,
-        NULL);
+    m_OutFileHandle = fopen(FileName, "wb");
+    if (m_OutFileHandle == NULL) {
+        printf("FileOpen: Could not open file.\n");
+        Close();
+        return false;
+    }
 
-    if (m_OutFileHandle == INVALID_HANDLE_VALUE) return FALSE;
-
-    return TRUE;
+    return true;
 }
 
-BOOLEAN
+bool
 FileContext::WriteFile(
-    PVOID Buffer,
-    DWORD NbOfBytesToWrite
+    void *Buffer,
+    uint32_t NbOfBytesToWrite
 )
 {
-    DWORD WrittenBytes;
-    BOOL Ret;
+    uint32_t WrittenBytes;
+    bool Ret = false;
 
     WrittenBytes = 0;
-    Ret = FALSE;
 
-    Ret = ::WriteFile(m_OutFileHandle, Buffer, NbOfBytesToWrite, &WrittenBytes, NULL);
-    if ((Ret == FALSE) && (GetLastError() == ERROR_IO_PENDING))
-    {
-        do
-        {
-            Ret = WaitForSingleObjectEx(m_OutFileHandle, INFINITE, TRUE);
-        } while (Ret == WAIT_IO_COMPLETION);
+    WrittenBytes = (uint32_t)fwrite(Buffer, 1, NbOfBytesToWrite, m_OutFileHandle);
+    if (WrittenBytes != NbOfBytesToWrite) {
+        printf("error: can't write data. result = 0x%x\n", WrittenBytes);
+        goto cleanup;
     }
 
-    if (WrittenBytes == NbOfBytesToWrite)
-    {
-        Ret = TRUE;
-    }
+    Ret = true;
 
+cleanup:
     return Ret;
 }
 
-VOID
+void
 FileContext::Close(
 )
 {
-    if (m_FileHandle)
-    {
-        CloseHandle(m_FileHandle);
+    if (m_FileHandle) {
+        fclose(m_FileHandle);
         m_FileHandle = NULL;
     }
 
     if (m_OutFileHandle)
     {
-        CloseHandle(m_OutFileHandle);
+        fclose(m_OutFileHandle);
         m_OutFileHandle = NULL;
     }
 }
@@ -299,13 +282,18 @@ FileContext::~FileContext()
     if (m_PreAllocatedBuffer) delete[] m_PreAllocatedBuffer;
 }
 
-ULONGLONG
+uint64_t
 FileContext::GetFileSize(
-    VOID
+    void
 )
 {
-    LARGE_INTEGER FileSize = { 0 };
-    ::GetFileSizeEx(m_FileHandle, &FileSize);
+    uint64_t FileSize = 0;
+#if _WIN32
+    ::GetFileSizeEx(m_FileHandle, (PLARGE_INTEGER)&FileSize);
+#else
+    fseek64(m_FileHandle, 0, SEEK_END);
+    FileSize = ftell64(m_FileHandle);
+#endif
 
-    return FileSize.QuadPart;
+    return FileSize;
 }

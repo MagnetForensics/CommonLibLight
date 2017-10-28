@@ -23,52 +23,60 @@ Revision History:
 #ifndef __MISC_H__
 #define __MISC_H__
 
-USHORT
+#define C_RED    "\e[0;31m"
+#define C_YELLOW "\e[0;33m"
+#define C_GREEN  "\e[0;32m"
+#define C_WHITE  "\e[0;37m"
+#define C_RESET  "\e[0m"
+
+void
+Red(
+    const char * Format, ...
+);
+
+void
+White(
+    const char * Format, ...
+);
+
+void
+Green(
+    const char * Format, ...
+);
+
+#if _WIN32
+uint16_t
 GetConsoleTextAttribute(
     HANDLE hConsole
 );
 
-VOID
-Red(
-    LPCWSTR Format, ...
-);
-
-VOID
-White(
-    LPCWSTR Format, ...
-);
-
-VOID
-Green(
-    LPCWSTR Format, ...
-);
-
-VOID
+void
 GetCursorPosition(
     HANDLE hConsole,
     PCOORD Coord
 );
 
-BOOLEAN
+bool
 CryptInitSha256(
 );
 
-ULONG
+uint32_t
 CryptGetHashLen(
 );
 
-BOOLEAN
+bool
 CryptHashData(
-    PVOID Buffer,
-    ULONG BufferSize
+    void *Buffer,
+    uint32_t BufferSize
 );
 
-BYTE *
+uint8_t *
 CryptGetHash(
 );
 
-VOID
+void
 CryptClose(
 );
+#endif
 
 #endif

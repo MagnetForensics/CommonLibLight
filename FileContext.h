@@ -24,7 +24,10 @@ Revision History:
 #ifndef __FILE_CXT_H__
 #define __FILE_CXT_H__
 
+#ifndef PAGE_SIZE
 #define PAGE_SIZE 0x1000
+#endif
+
 #define MIN_READ_BUFFER_SIZE ((0x10 + 1) * PAGE_SIZE)
 
 enum PlatformType {
@@ -41,128 +44,128 @@ public:
 
     }
 
-    FileContext(PlatformType Platform, ULONG Major, ULONG Minor)
+    FileContext(PlatformType Platform, uint32_t Major, uint32_t Minor)
     {
         SetPlatform(Platform);
         SetMajorVersion(Major);
         SetMinorVersion(Minor);
     }
 
-    ULONG GetPlatform() { return m_Platform; }
-    VOID SetPlatform(PlatformType Platform) { m_Platform = Platform; }
+    uint32_t GetPlatform() { return m_Platform; }
+    void SetPlatform(PlatformType Platform) { m_Platform = Platform; }
 
-    ULONG GetMajorVersion() { return m_MajorVersion; }
-    VOID SetMajorVersion(ULONG MajorVersion) { m_MajorVersion = MajorVersion; }
+    uint32_t GetMajorVersion() { return m_MajorVersion; }
+    void SetMajorVersion(uint32_t MajorVersion) { m_MajorVersion = MajorVersion; }
 
-    ULONG GetMinorVersion() { return m_MinorVersion; }
-    VOID SetMinorVersion(ULONG MinorVersion) { m_MinorVersion = MinorVersion; }
+    uint32_t GetMinorVersion() { return m_MinorVersion; }
+    void SetMinorVersion(uint32_t MinorVersion) { m_MinorVersion = MinorVersion; }
 
-    HANDLE GetFileHandle() { return m_FileHandle; }
-    VOID SetFileHandle(HANDLE Handle) { m_FileHandle = Handle; }
+    FILE* GetFileHandle() { return m_FileHandle; }
+    void SetFileHandle(FILE* Handle) { m_FileHandle = Handle; }
 
-    BOOLEAN
+    bool
         OpenFile(
-            LPCWSTR FileName,
-            ULONG Type
+            char * FileName,
+            uint32_t Type
         );
 
-    BOOLEAN
+    bool
         OpenFile(
-            LPCWSTR FileName
+            char * FileName
         ) {
         return OpenFile(FileName, 0);
     }
 
-    BOOLEAN
+    bool
         CreateOutputFile(
-            LPWSTR FileName
+            char * FileName
         );
 
-    PVOID
+    void *
         ReadFile(
-            ULONG64 Offset,
-            ULONG Size,
-            PVOID *m_Data
+            uint64_t Offset,
+            uint32_t Size,
+            uint8_t **m_Data
         );
 
-    BOOLEAN
+    bool
         WriteFile(
-            PVOID Buffer,
-            DWORD NbOfBytesToWrite
+            void *Buffer,
+            uint32_t NbOfBytesToWrite
         );
 
-    PVOID
+    void *
         GetTempBuffer(
         );
 
-    BOOLEAN
+    bool
         IsWin8AndAbove(
         );
 
-    BOOLEAN
+    bool
         IsWin7AndAbove(
         );
 
-    BOOLEAN
+    bool
         IsVistaAndAbove(
         );
 
-    BOOLEAN
+    bool
         Is64Bits(
         );
 
-    BOOLEAN
+    bool
         IsWinXP(
         );
 
-    BOOLEAN
+    bool
         IsWinXP64(
         );
 
-    BOOLEAN
+    bool
         IsWinVista(
         );
 
-    BOOLEAN
+    bool
         IsWin7(
         );
 
-    BOOLEAN
+    bool
         IsWin8(
         );
 
-    BOOLEAN
+    bool
         IsWin81(
         );
 
-    BOOLEAN
+    bool
         IsWin10(
         );
 
-    VOID
+    void
         Close(
         );
 
-    ULONGLONG
+    uint64_t
         GetFileSize(
-            VOID
+            void
         );
 
     ~FileContext();
 
 private:
     PlatformType m_Platform;
-    ULONG m_MajorVersion;
-    ULONG m_MinorVersion;
+    uint32_t m_MajorVersion;
+    uint32_t m_MinorVersion;
 
-    HANDLE m_FileHandle = NULL;
-    HANDLE m_OutFileHandle = NULL;
+    FILE* m_FileHandle = NULL;
+    FILE* m_OutFileHandle = NULL;
 
-    PVOID m_ReadedData = NULL;
-    ULONG m_ReadedDataSize = 0;
+    uint8_t *m_ReadedData = NULL;
+    uint32_t m_ReadedDataSize = 0;
 
-    PVOID m_PreAllocatedBuffer = NULL;
-    ULONG m_PreAllocatedBufferSize = MIN_READ_BUFFER_SIZE;
+    uint8_t *m_PreAllocatedBuffer = NULL;
+    uint32_t m_PreAllocatedBufferSize = MIN_READ_BUFFER_SIZE;
 };
 
 #endif
