@@ -107,6 +107,7 @@ CryptInitSha256(
     VOID
 )
 {
+#if !defined(_M_ARM64)
     // https://support.microsoft.com/en-us/kb/238187
     if (!CryptAcquireContext(&g_hCryptProv,
         NULL,
@@ -132,7 +133,7 @@ CryptInitSha256(
         DbgPrint(L" Error: CryptCreateHash() failed with %d\n", GetLastError());
         return FALSE;
     }
-
+#endif
     return TRUE;
 }
 
@@ -142,9 +143,10 @@ CryptHashData(
     ULONG BufferSize
 )
 {
+#if !defined(_M_ARM64)
     if (g_hCrypHash == NULL) return FALSE;
     if (!CryptHashData(g_hCrypHash, (const BYTE*)Buffer, BufferSize, 0)) return FALSE;
-
+#endif
     return TRUE;
 }
 
@@ -152,6 +154,7 @@ BYTE *
 CryptGetHash(
 )
 {
+#if !defined(_M_ARM64)
     DWORD InputSize = sizeof(DWORD);
 
     if (g_hCrypHash == NULL) return FALSE;
@@ -162,6 +165,9 @@ CryptGetHash(
     if (!CryptGetHashParam(g_hCrypHash, HP_HASHVAL, FinalHash, &g_HashLen, 0)) return FALSE;
 
     return FinalHash;
+#else 
+    return nullptr;
+#endif
 }
 
 ULONG
@@ -174,6 +180,8 @@ CryptGetHashLen(
 VOID
 CryptClose()
 {
+#if !defined(_M_ARM64)
     if (g_hCryptProv) CryptDestroyHash(g_hCryptProv);
     if (g_hCrypHash) CryptReleaseContext(g_hCrypHash, 0);
+#endif
 }
